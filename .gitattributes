@@ -2,14 +2,14 @@ $ cat .gitattributes
 
 css/* linguist-vendored
 font-awesome/* linguist-vendored
-Web/js/tablesorter/* linguist-vendored
-Web/js/bootstrap-datepicker.js linguist-vendored
-Web/js/bootstrap-datetimepicker.js linguist-vendored
-Web/js/bootstrap.js linguist-vendored
-Web/js/bootstrap.min.js linguist-vendored
-Web/js/bootstrap.min2.js linguist-vendored
-Web/js/jquery-1.10.2.js linguist-vendored
-Web/js/moment.js linguist-vendored
+js/tablesorter/* linguist-vendored
+js/bootstrap-datepicker.js linguist-vendored
+js/bootstrap-datetimepicker.js linguist-vendored
+js/bootstrap.js linguist-vendored
+js/bootstrap.min.js linguist-vendored
+js/bootstrap.min2.js linguist-vendored
+js/jquery-1.10.2.js linguist-vendored
+js/moment.js linguist-vendored
 
 *.png binary
 *.jpg binary
