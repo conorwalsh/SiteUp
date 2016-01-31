@@ -3,7 +3,7 @@
 Description
 -----------
 
-SiteUp? is a php script and online control panel that sends an email if it can reach a specified URL.
+SiteUp? is a php script and online control panel that sends an email if it can't reach a specified URL.
 
 Installation
 -----------
