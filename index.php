@@ -23,10 +23,10 @@ else if ($password!=$dbpass) {
 
 <!-------------------------------------------- LICENSE (MIT) -------------------------------------------------
 
-         							Copyright (c) 2016 Conor Walsh
-         						  Website: http://www.conorwalsh.net
-	                            GitHub:  https://github.com/conorwalsh
-	                     					Project: SiteUp?
+         					    Copyright (c) 2016 Conor Walsh
+         					  Website: http://www.conorwalsh.net
+	                            		GitHub:  https://github.com/conorwalsh
+	                     				  Project: SiteUp?
 
 				Permission is hereby granted, free of charge, to any person obtaining a copy
 				of this software and associated documentation files (the "Software"), to deal
