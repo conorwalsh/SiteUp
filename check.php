@@ -44,19 +44,26 @@
 	
 	include('db.php');
 	
-	$dbpass = mysql_result(mysql_query("SELECT dbpass FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
+	$dbpass = mysql_result(mysql_query("SELECT dbpass FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
 
 	if($pass==$dbpass){
 
 		$message;
 		$response;
 		
-		$site = mysql_result(mysql_query("SELECT site FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
+		$site = mysql_result(mysql_query("SELECT site FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+		
+		define('SITE_NAME', mysql_result(mysql_query("SELECT regardsname FROM cctvup_settings WHERE id=1 LIMIT 1;"),0)); 
+		define('SITE_URL', mysql_result(mysql_query("SELECT site FROM cctvup_settings WHERE id=1 LIMIT 1;"),0)); 
+	
+		function email_template($message) {
+			return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" ><style>table td p {margin-bottom:15px;}</style></head><body style="padding:0;margin:0;background: #f3f3f3;font-family:arial, \'helvetica neue\', helvetica, serif" ><table cellpadding="0" cellspacing="0" border="0" align="center" width="100%" style="padding: 0 0 35px 0; background:#f3f3f3;"><tr><td align="center" style="margin: 0; padding: 0;"><center><table border="0" cellpadding="0" cellspacing="0" width="600"><tr><th style="padding:10px 0 10px 5px;text-align:left;vertical-align:top;" ><a href="'.SITE_URL.'" target="_blank" >'.SITE_NAME.'</a></th></tr><tr><td style="border-radius:5px;background:#fff;border:1px solid #e1e1e1;font-size:12px;font-family:arial, helvetica, sans-serif;padding:20px;font-size:13px;line-height:22px;" >'.$message.'</td></tr><tr><td style="padding-top:10px;font-size:10px;color:#aaa;line-height:14px;font-family:arial, \'helvetica neue\', helvetica, serif" ><p class="meta">This email is being sent to you from '.SITE_NAME.'.<br />&copy; <a href="http://conorwalsh.net/" style="font-size:10px;color:#aaa;line-height:14px;font-family:arial, \'helvetica neue\', helvetica, serif;">ConorWalsh.Net</a> '.date('Y').'</p></td></tr></table></center></td></tr></table></body></html>';
+		}
 	
 		function isSiteAvailable($url){
 			//check, if a valid url is provided
 			if(!filter_var($url, FILTER_VALIDATE_URL)){
-				//return 'URL provided wasn\'t valid';
+				//return 'URL provided wasnt valid';
 				return 'invalid';
 			}
 			
@@ -81,83 +88,88 @@
 		
 		$response = isSiteAvailable($site);
 		
-		$laststatusraw = explode(" ",mysql_result(mysql_query("SELECT status FROM siteup ORDER BY id DESC LIMIT 1;"),0));
+		$laststatusraw = explode(" ",mysql_result(mysql_query("SELECT status FROM cctvup_new ORDER BY id DESC LIMIT 1;"),0));
 	    
 	    $laststatus = strtolower(strval($laststatusraw[0]));
 		
-		if ($response!="success"&&$laststatus!="offline") {	
-						
-			include('lib/mail.php');
-			
-			$to = mysql_result(mysql_query("SELECT toemail FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			$tofirstname = mysql_result(mysql_query("SELECT emailfirstname FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			$from = mysql_result(mysql_query("SELECT fromemail FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			
-			$subject = mysql_result(mysql_query("SELECT warningsubject FROM siteup_settings WHERE id=1 LIMIT 1;"),0) . " (" . date('l jS \of F Y g:i:s A') . ")";
-			
-			$warning;
-			if ($response == "failed") {
-				$warning = mysql_result(mysql_query("SELECT warningoffline FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			}
-			else if($response == "invalid") {
-				$warning = mysql_result(mysql_query("SELECT warninginvalid FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			}
-			else {
-				$warning = mysql_result(mysql_query("SELECT warningelse FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			}
-	
-			$message = 'Hi ' . $tofirstname . ',<br/>This is a warning from the CCTV camera system.<br/><br/><strong style="font-weight: bold; color: #BD362F; font-size: 18px;">' . $warning . '</strong><br/><p style="text-align: center; font-size: 18px; font-weight: bold;"><a href="' . mysql_result(mysql_query("SELECT site FROM siteup_settings WHERE id=1 LIMIT 1;"),0) .'">Check site.</a></p>Regards,<br/>' . mysql_result(mysql_query("SELECT regardsname FROM siteup_settings WHERE id=1 LIMIT 1;"),0) .'.</p>';
-			
-			
-			$status = sendmail($to, $subject, $message, $from);
-		
-			if($status==TRUE){
-				$insertsql="INSERT INTO siteup (status) VALUES ('offline email success');";
+		if($response!="success"){
+			//First Check
+			if($laststatus=="online") {	
+				$insertsql="INSERT INTO cctvup_new (status) VALUES ('check fail email not required');";
 				mysql_query($insertsql, $conn);
 			}
-			else if($status==FALSE){
-				$status1 = sendmail($to, $subject, $message, $from);
-				if($status1==TRUE){
-					$insertsql="INSERT INTO siteup (status) VALUES ('offline email success2');";
-					mysql_query($insertsql, $conn);
-				}
-				else if($status1==FALSE){
-					$insertsql="INSERT INTO siteup (status) VALUES ('offline email fail');";
-					mysql_query($insertsql, $conn);
-				}
-			}
-		}
-		else if($response=="success"&&$laststatus!="online"){
+			//Second check
+			else if($laststatus=="check") {	
+				//include('lib/mail.php');
+				require_once('../mail/new/mail.cw.php');
 				
-			include('lib/mail.php');
-			
-			$to = mysql_result(mysql_query("SELECT toemail FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			$tofirstname = mysql_result(mysql_query("SELECT emailfirstname FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			$from = mysql_result(mysql_query("SELECT fromemail FROM siteup_settings WHERE id=1 LIMIT 1;"),0);
-			
-			$subject = mysql_result(mysql_query("SELECT notificationsubject FROM siteup_settings WHERE id=1 LIMIT 1;"),0) . " (" . date('l jS \of F Y g:i:s A') . ")";
-			
-			$message = 'Hi ' . $tofirstname . ',<br/>This is a notification from the CCTV camera system.<br/><br/><strong style="font-weight: bold; color: #51A351; font-size: 18px;">The CCTV cameras are back online.</strong><br/><p style="text-align: center; font-size: 18px; font-weight: bold;"><a href="' . mysql_result(mysql_query("SELECT site FROM siteup_settings WHERE id=1 LIMIT 1;"),0) .'">Check site.</a></p>Regards,<br/>' . mysql_result(mysql_query("SELECT regardsname FROM siteup_settings WHERE id=1 LIMIT 1;"),0) .'.</p>';
-			
-			
-			$status = sendmail($to, $subject, $message, $from);
-		
-			if($status==TRUE){
-				$insertsql="INSERT INTO siteup (status) VALUES ('online email success');";
-				mysql_query($insertsql, $conn);
-			}
-			else if($status==FALSE){
-				$status1 = sendmail($to, $subject, $message, $from);
-				if($status1==TRUE){
-					$insertsql="INSERT INTO siteup (status) VALUES ('online email success2');";
-					mysql_query($insertsql, $conn);
+				$to = mysql_result(mysql_query("SELECT toemail FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				$tofirstname = mysql_result(mysql_query("SELECT emailfirstname FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				$from = mysql_result(mysql_query("SELECT fromemail FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				
+				$subject = mysql_result(mysql_query("SELECT warningsubject FROM cctvup_settings WHERE id=1 LIMIT 1;"),0) . " (" . date('l jS \of F Y g:i:s A') . ")";
+				
+				$warning;
+				if ($response == "failed") {
+					$warning = mysql_result(mysql_query("SELECT warningoffline FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
 				}
-				else if($status1==FALSE){
-					$insertsql="INSERT INTO siteup (status) VALUES ('online email fail');";
+				else if($response == "invalid") {
+					$warning = mysql_result(mysql_query("SELECT warninginvalid FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				}
+				else {
+					$warning = mysql_result(mysql_query("SELECT warningelse FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				}
+		
+				$message = 'Hi ' . $tofirstname . ',<br/>This is a warning from the CCTV camera system.<br/><br/><strong style="font-weight: bold; color: #BD362F; font-size: 18px;">' . $warning . '</strong><br/><p style="text-align: center; font-size: 18px; font-weight: bold;"><a href="' . mysql_result(mysql_query("SELECT site FROM cctvup_settings WHERE id=1 LIMIT 1;"),0) .'">Check site.</a></p>Regards,<br/>' . mysql_result(mysql_query("SELECT regardsname FROM cctvup_settings WHERE id=1 LIMIT 1;"),0) .'.</p>';
+				
+				$mail->Subject = $subject;
+				$mail->MsgHTML($message = email_template($message));
+				$mail->AddAddress($to);
+				
+				if($mail->Send()) {
+				    $insertsql="INSERT INTO cctvup_new (status) VALUES ('offline email success');";
 					mysql_query($insertsql, $conn);
+				} else {
+				    $insertsql="INSERT INTO cctvup_new (status) VALUES ('offline email fail: $mail->ErrorInfo');";
+					mysql_query($insertsql, $conn);
+					//echo "Mailer Error: " . $mail->ErrorInfo;
 				}
 			}
 		}
+		else {
+			if($laststatus=="offline"){
+			
+				require_once('../mail/new/mail.cw.php');
+				
+				$to = mysql_result(mysql_query("SELECT toemail FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				$tofirstname = mysql_result(mysql_query("SELECT emailfirstname FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				$from = mysql_result(mysql_query("SELECT fromemail FROM cctvup_settings WHERE id=1 LIMIT 1;"),0);
+				
+				$subject = mysql_result(mysql_query("SELECT notificationsubject FROM cctvup_settings WHERE id=1 LIMIT 1;"),0) . " (" . date('l jS \of F Y g:i:s A') . ")";
+				
+				$message = 'Hi ' . $tofirstname . ',<br/>This is a notification from the CCTV camera system.<br/><br/><strong style="font-weight: bold; color: #51A351; font-size: 18px;">The CCTV cameras are back online.</strong><br/><p style="text-align: center; font-size: 18px; font-weight: bold;"><a href="' . mysql_result(mysql_query("SELECT site FROM cctvup_settings WHERE id=1 LIMIT 1;"),0) .'">Check site.</a></p>Regards,<br/>' . mysql_result(mysql_query("SELECT regardsname FROM cctvup_settings WHERE id=1 LIMIT 1;"),0) .'.</p>';
+				
+				$mail->Subject = $subject;
+				$mail->MsgHTML($message = email_template($message));
+				$mail->AddAddress($to);
+				
+				if($mail->Send()) {
+				    $insertsql="INSERT INTO cctvup_new (status) VALUES ('online email success');";
+					mysql_query($insertsql, $conn);
+				} else {
+				    $insertsql="INSERT INTO cctvup_new (status) VALUES ('online email fail: $mail->ErrorInfo');";
+					mysql_query($insertsql, $conn);
+				}
+			}
+			//Online without email
+			else if($laststatus=="check"){
+			
+			    $insertsql="INSERT INTO cctvup_new (status) VALUES ('online email not required');";
+				mysql_query($insertsql, $conn);
+			}
+		}
+		
+		
 	}
 	else{
 		 echo "Invalid Code";
