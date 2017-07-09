@@ -10,7 +10,7 @@ Installation
 
 1. Download or clone this repository.
 2. Setup a MySQL database using the SQL files in the MySQL folder.
-3. Change the settings in the db.php file and in lib/dp.php in the web folder to connect to your MySQl server.
+3. Change the settings in the db.php file and in lib/dp.php in the web folder to connect to your MySQL server.
 4. Upload all the files in the Web folder to your server.
 5. Setup a cronjob to run the check.php file every 5 minutes. You can use the command:
 ```curl http://yourdomainhere.com/siteup/check.php?p=yourpassword```
