@@ -17,7 +17,9 @@ Installation
 6. Login to your system using the default password (siteup). **NOTE: This is an example control panel and the password system is not very secure, if you plan to use this system a proper authentication system should be implemented and the default password must be changed.**
 7. From this page you can change the url of the site you are monitoring and the email information.
 
-That should be it but if you run into any problems just send me an email.
+That should be it but if you run into any problems just send me an email (conor@conorwalsh.net).
+
+<img height="300px" src="http://conorwalsh.net/img/siteup_screenshot.png" />
 
 Credits
 ------
